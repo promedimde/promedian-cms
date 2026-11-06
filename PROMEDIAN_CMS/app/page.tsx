@@ -5,16 +5,33 @@ import { sections } from "@/lib/sections";
 import Link from "next/link";
 
 type Item = { id:string; section:string; title:string; description:string|null; category:string|null; image_url:string|null; video_url:string|null; published:boolean; sort_order:number };
+type HeroSettings = { eyebrow:string; headline:string; accent_headline:string; description:string; image_url:string|null; feature_1:string; feature_2:string; feature_3:string; feature_4:string };
+const defaultHero:HeroSettings = { eyebrow:"D4 PRODUKSI MEDIA · IMDE", headline:"Wujudkan Ide Kreatif Menjadi", accent_headline:"Karya Media Berdampak.", description:"Belajar, berkarya, dan berkolaborasi dalam ekosistem industri media digital.", image_url:"/images/hero-promedian-background.jpg", feature_1:"Praktik Produksi Media", feature_2:"Terhubung dengan Industri (EMTEK Group)", feature_3:"Kurikulum Berbasis Proyek (65% Praktik)", feature_4:"Siap Berkarya di Industri Media Digital" };
 export default function Home() {
   const [items,setItems]=useState<Item[]>([]);
   const [loading,setLoading]=useState(true);
+  const [hero,setHero]=useState<HeroSettings>(defaultHero);
   useEffect(()=>{ if(!supabaseConfigured){setLoading(false);return}
-    supabase.from("content_items").select("*").eq("published",true).order("sort_order").then(({data})=>{setItems((data||[]) as Item[]);setLoading(false)});
+    Promise.all([
+      supabase.from("content_items").select("*").eq("published",true).order("sort_order"),
+      supabase.from("hero_settings").select("*").eq("id","main").maybeSingle()
+    ]).then(([contentResult,heroResult])=>{
+      setItems((contentResult.data||[]) as Item[]);
+      if(heroResult.data) setHero({...defaultHero,...heroResult.data});
+      setLoading(false);
+    });
   },[]);
   const get=(s:string)=>items.filter(x=>x.section===s);
   return <main className="wrap">
     <header className="top"><div className="brand"><div className="mark">P</div><div><b>PROMEDIAN</b><small>EXPLORE · CREATE · INSPIRE</small></div></div><Link className="btn secondary" href="/admin/login">Admin ↗</Link></header>
-    <section className="hero"><div className="eyebrow">D4 PRODUKSI MEDIA · IMDE</div><h1>Ideas into<br/><span className="grad">Impactful Stories.</span></h1><p>Jelajahi dunia produksi media. Belajar membuat video, film, konten digital, hingga produksi siaran bersama ekosistem industri media.</p><div className="actions"><a className="btn" href="#profil">Jelajahi Program Studi ↗</a><a className="btn secondary" href="#karya">Lihat Karya Mahasiswa</a></div></section>
+    <section className="hero-banner-live" aria-label="PROMEDIAN D4 Produksi Media IMDE" style={{backgroundImage:`linear-gradient(90deg,rgba(7,12,31,.94) 0%,rgba(7,12,31,.78) 48%,rgba(7,12,31,.18) 100%),url("${hero.image_url||defaultHero.image_url}")`}}>
+      <div className="hero-live-content">
+        <div className="hero-live-eyebrow">{hero.eyebrow}</div>
+        <h1>{hero.headline}<br/><span>{hero.accent_headline}</span></h1>
+        <p>{hero.description}</p>
+        <div className="hero-live-features">{[hero.feature_1,hero.feature_2,hero.feature_3,hero.feature_4].filter(Boolean).map((feature,i)=><div className="hero-live-feature" key={i}><span>{["◉","▣","▶","↗"][i]}</span><b>{feature}</b></div>)}</div>
+      </div>
+    </section>
     <div className="stats"><div className="stat"><b>65%</b><span>Praktik dalam pembelajaran*</span></div><div className="stat"><b>D4</b><span>Sarjana Terapan</span></div><div className="stat"><b>EMTEK</b><span>Ekosistem industri</span></div><div className="stat"><b>Digital</b><span>Fokus media modern</span></div></div>
     {!supabaseConfigured&&<div className="notice" style={{marginTop:16}}>Database belum dikonfigurasi. Ikuti README untuk menghubungkan project Supabase. Data contoh di bawah hanya konten statis awal.</div>}
     <section id="profil"><div className="section-title"><div><div className="eyebrow">ABOUT THE PROGRAM</div><h2>Kenali Produksi Media</h2></div></div><div className="grid">
