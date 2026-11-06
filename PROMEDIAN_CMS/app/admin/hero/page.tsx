@@ -47,11 +47,11 @@ export default function HeroSettingsPage() {
         return;
       }
 
-      const { data: admin } = await supabase
-        .from("admin_users")
-        .select("id")
-        .eq("id", user.id)
-        .maybeSingle();
+const { data: admin } = await supabase
+  .from("admin_users")
+  .select("user_id")
+  .eq("user_id", user.id)
+  .maybeSingle();
 
       if (!admin) {
         router.replace("/admin/login");
